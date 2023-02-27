@@ -1,8 +1,9 @@
 import streamlit as st
 from pytube import Playlist
-from PIL import Image
-# # Set up Streamlit page
-image = Image.open('app.png')
+import zipfile
+import os
+
+# Set up Streamlit page
 st.title("YouTube Playlist Downloader")
 playlist_url = st.text_input("Enter the URL of the YouTube playlist you want to download:")
 download_button = st.button("Download Playlist")
@@ -13,13 +14,30 @@ if download_button:
         # Create a Playlist object from the given URL
         playlist = Playlist(playlist_url)
 
-        # Create a download link for each video in the playlist
-        for video in playlist.videos:
-            st.write(f"Generating download link for {video.title}...")
-            video_url = video.streams.get_highest_resolution().url
-            st.markdown(f'<a href="{video_url}" download="{video.title}.mp4">Download {video.title}</a>', unsafe_allow_html=True)
-            st.write(f"Download link for {video.title} generated!")
+        # Create a directory to store the downloaded videos
+        dir_path = os.path.join(os.getcwd(), "videos")
+        os.makedirs(dir_path, exist_ok=True)
 
-        st.success("Playlist download links generated successfully!")
+        # Download each video in the playlist to the videos directory
+        for i, video in enumerate(playlist.videos):
+            st.write(f"Downloading {video.title}...")
+            video.streams.get_highest_resolution().download(output_path=dir_path)
+            st.write(f"{i+1}/{len(playlist)} videos downloaded!")
+
+        # Create a zip file of the downloaded videos
+        zip_file_path = os.path.join(os.getcwd(), "playlist.zip")
+        with zipfile.ZipFile(zip_file_path, "w") as zip_file:
+            for video_file in os.listdir(dir_path):
+                video_file_path = os.path.join(dir_path, video_file)
+                zip_file.write(video_file_path, arcname=video_file)
+        st.success("Playlist download complete!")
+        
+        # Create a download button for the zip file
+        st.download_button(
+            label="Download Playlist",
+            data=open(zip_file_path, "rb").read(),
+            file_name="playlist.zip",
+            mime="application/zip"
+        )
     except Exception as e:
         st.error(f"An error occurred: {e}")
