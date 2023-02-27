@@ -2,8 +2,10 @@ import streamlit as st
 from pytube import Playlist
 import zipfile
 import os
+from PIL import Image
 
 # Set up Streamlit page
+image = Image.open('app.png')
 st.title("YouTube Playlist Downloader")
 playlist_url = st.text_input("Enter the URL of the YouTube playlist you want to download:")
 download_button = st.button("Download Playlist")
